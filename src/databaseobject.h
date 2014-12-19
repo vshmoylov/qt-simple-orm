@@ -26,17 +26,19 @@
     TYPE get##NAME () const { return m_##NAME; } \
     void set##NAME (const TYPE &value) { m_##NAME = value; } \
     private: \
-    TYPE m_##NAME;
+    TYPE m_##NAME = TYPE();
 
 //initializing QStringList by std::initializer_list
 #define PRIMARY_KEY(keys...) \
     public: virtual QStringList getPK() const { return { FOREACH(ADDCOMMA, (keys)) }; }
 
 #define NOT_NULL_FIELDS(fields...) \
-    public: virtual QStringList getNotNull() const { return { FOREACH(ADDCOMMA, (fields)) } ; }
+    public: virtual QStringList getNotNull() const { return { FOREACH(ADDCOMMA, (fields)) }; }
 
+#define TABLE (TABLENAME) \
+    public: virtual QString getTableName() const { return #TABLENAME; }
 
-typedef QPair<QString, QVariant::Type> FieldInfo;
+typedef struct { int propertyIndex; QString fieldName; QVariant::Type type; } FieldInfo;
 
 class DatabaseObject : public QObject
 {
@@ -44,13 +46,22 @@ class DatabaseObject : public QObject
 public:
     explicit DatabaseObject(QObject *parent = 0);
 
-    QList<FieldInfo> getFields();
-    QString getTableDDL(QString tableName=QString()) ;
+    QList<FieldInfo> getFields() const;
     virtual QStringList getPK() const;
     virtual QStringList getNotNull() const;
+    virtual QString getTableName() const;
+    void clear();
+
+    QString getTableDDL() const;
+    QString getSelect(const QString &whereClause = QString()) const;
+    QString getInsert() const;
+    QString getUpdate(const QString &whereClause = QString()) const;
+    QString getUpdate(const QList<FieldInfo> &indexFields) const;
+    QString getDelete(const QString &whereClause = QString()) const;
 protected:
-    bool isPK(QString fieldName);
-    bool isNullField(QString fieldName);
+    bool isPK(const QString &fieldName) const;
+    bool isNullField(const QString &fieldName) const;
+    bool isInteger(QVariant::Type type) const;
 };
 
 #endif // DATABASEOBJECT_H
