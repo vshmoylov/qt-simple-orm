@@ -20,10 +20,12 @@ INCLUDEPATH += ../src
 SOURCES += main.cpp\
     ../src/databaseobject.cpp \
     ../src/databasehelper.cpp \
-    objb.cpp
+    objb.cpp \
+    client.cpp
 
 HEADERS  += widget.h \
     ../src/databaseobject.h \
     ../src/databasehelper.h \
-    objb.h
+    objb.h \
+    client.h
 

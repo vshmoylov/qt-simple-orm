@@ -7,8 +7,9 @@
 class DatabaseHelper
 {
 public:
-    static QString getTypeString(QVariant::Type type, QString databaseDriverName);
-    static QString getFieldValue(QVariant value, QString databaseDriverName);
+    static QString getTypeString(QVariant::Type type, const QString &databaseDriverName);
+    static QString getFieldValue(const QVariant &value);
+    static QString getFieldValue(const QVariant &value, const QString &databaseDriverName);
 };
 
 #endif // DATABASEHELPER_H

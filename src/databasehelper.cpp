@@ -1,7 +1,8 @@
 #include "databasehelper.h"
 #include <QDate>
+#include <QSqlDatabase>
 
-QString DatabaseHelper::getTypeString(QVariant::Type type, QString databaseDriverName)
+QString DatabaseHelper::getTypeString(QVariant::Type type, const QString &databaseDriverName)
 {
     QString result;
     if (databaseDriverName == "QSQLITE"){
@@ -32,7 +33,13 @@ QString DatabaseHelper::getTypeString(QVariant::Type type, QString databaseDrive
     return result;
 }
 
-QString DatabaseHelper::getFieldValue(QVariant value, QString databaseDriverName)
+QString DatabaseHelper::getFieldValue(const QVariant &value)
+{
+    QString sqlDriverName = QSqlDatabase::database().driverName().toUpper();
+    return getFieldValue(value, sqlDriverName);
+}
+
+QString DatabaseHelper::getFieldValue(const QVariant &value, const QString &databaseDriverName)
 {
     switch (value.type()) {
     case QVariant::Int:

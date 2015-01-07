@@ -132,6 +132,31 @@ QString DatabaseObject::getDelete(const QString &whereClause) const
     return sql;
 }
 
+DBObjectList DatabaseObject::getAll(const QString &whereClause) const
+{
+    DBObjectList result;
+    QString selectSql = getSelect(whereClause);
+    QSqlQuery query(selectSql);
+    while (query.next()){
+        DBObjectPointer obj = parseQueryResult(query);
+        result.append(obj);
+    }
+    return result;
+}
+
+DBObjectPointer DatabaseObject::getById(QVariant idValue, QString idFieldName) const
+{
+/*    int ind = findPropertyCaseInsensitive("id");
+    if (ind==-1)
+        return DBObjectPointer();*/
+    QString selectSql = getSelect(QString("%1 = %2").arg(idFieldName).arg(DatabaseHelper::getFieldValue(idValue)));
+    QSqlQuery query(selectSql);
+    if (query.next()){
+        return parseQueryResult(query); // return retrieved data
+    }
+    return DBObjectPointer(); // empty ptr
+}
+
 QList<FieldInfo> DatabaseObject::getFields() const
 {
     QList< FieldInfo > result;
@@ -147,17 +172,29 @@ QList<FieldInfo> DatabaseObject::getFields() const
 
 QStringList DatabaseObject::getPK() const
 {
-    return QStringList();
+    int idx = metaObject()->indexOfClassInfo("PK");
+    if (idx<0)
+        return QStringList();
+    QMetaClassInfo metaInfo = metaObject()->classInfo(idx);
+    return QString(metaInfo.value()).split(QRegExp("[, ]"), QString::SkipEmptyParts);
 }
 
 QStringList DatabaseObject::getNotNull() const
 {
-    return QStringList();
+    int idx = metaObject()->indexOfClassInfo("NotNull");
+    if (idx<0)
+        return QStringList();
+    QMetaClassInfo metaInfo = metaObject()->classInfo(idx);
+    return QString(metaInfo.value()).split(QRegExp("[, ]"), QString::SkipEmptyParts);
 }
 
 QString DatabaseObject::getTableName() const
 {
-    return this->metaObject()->className();
+    int idx = metaObject()->indexOfClassInfo("TableName");
+    if (idx<0)
+        return metaObject()->className();
+    return metaObject()->classInfo(idx).value();
+
 }
 
 void DatabaseObject::clear()
@@ -191,4 +228,50 @@ bool DatabaseObject::isInteger(QVariant::Type type) const
         break;
     }
     return false;
+}
+
+int DatabaseObject::findPropertyCaseInsensitive(QString propertyName) const
+{
+    QList<FieldInfo> fields = getFields();
+    foreach (const FieldInfo &field, fields) {
+        if (0 == QString::compare(field.fieldName, propertyName, Qt::CaseInsensitive)){
+            return field.propertyIndex;
+        }
+    }
+    return -1;
+}
+
+DBObjectPointer DatabaseObject::parseQueryResult(QSqlQuery query) const
+{
+    QList<FieldInfo> fields = getFields();
+    const QMetaObject *metaObj = this->metaObject();
+    QObject *newInst = metaObj->newInstance();
+    DatabaseObject *ptr = qobject_cast<DatabaseObject*>(newInst);
+    DBObjectPointer result(ptr);
+    for (int i=0; i<fields.size(); i++){
+        const FieldInfo &field = fields[i];
+        QMetaProperty property = metaObj->property(field.propertyIndex);
+        QVariant value = query.value(i);
+        property.write(result.data(), value);
+    }
+    return result;
+}
+
+
+QDebug operator<<(QDebug d, const DatabaseObject &object)
+{
+    d << "\n{ ";
+    QList<FieldInfo> fields = object.getFields();
+    foreach (const FieldInfo &field, fields) {
+        QMetaProperty property = object.metaObject()->property(field.propertyIndex);
+        d << field.fieldName << ": " << property.read(&object) << "\n";
+    }
+    d << "}\n";
+    return d;
+}
+
+
+QDebug operator<<(QDebug d, const DBObjectPointer &object)
+{
+    return operator <<(d, *object);
 }
