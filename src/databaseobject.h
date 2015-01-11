@@ -4,6 +4,13 @@
 #include <QObject>
 #include <QtSql>
 
+//logging support
+#ifndef LOG
+#include <QDebug>
+#define LOG(...) qDebug()
+#endif
+
+//orm-related macros
 #define FIELD(TYPE, NAME) \
     Q_PROPERTY(TYPE NAME READ get_##NAME WRITE set_##NAME) \
     public: \
@@ -37,6 +44,15 @@ template<typename T>QList< QSharedPointer<T> > castList(const DBObjectList &objL
      return result;
 }
 
+template<typename T>QList<T> derefCastList(const DBObjectList &objList)
+{
+    QList<T> result;
+    foreach (const DBObjectPointer &ptr, objList) {
+        result.append(T(*ptr));
+    }
+    return result;
+}
+
 class DatabaseObject : public QObject
 {
 
@@ -49,9 +65,9 @@ public:
     //ORM-related functions
     DBObjectList getAll(const QString &whereClause = QString()) const;
     DBObjectPointer getById(QVariant idValue, QString idFieldName = QString("id")) const;
-    int addObject();     //int add/persist()
-    bool modifyObject(); //bool modify/save()
-    bool deleteObject(); //bool delete()
+    virtual int addObject();     //int add/persist()
+    virtual bool modifyObject(); //bool modify/save()
+    virtual bool deleteObject(); //bool delete()
 
     static DBObjectList getAll(const QMetaObject &meta, const QString &whereClause = QString());
 //    template<class T> static QList< QSharedPointer<T> > getAll1();
@@ -79,6 +95,7 @@ protected:
     bool isInteger(QVariant::Type type) const;
     int findPropertyCaseInsensitive(QString propertyName) const;
     DBObjectPointer parseQueryResult(QSqlQuery query) const;
+    void logQueryState(const QSqlQuery &query) const;
 };
 
 QDebug operator<< (QDebug d, const DatabaseObject &object);

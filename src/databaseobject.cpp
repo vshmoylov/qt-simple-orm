@@ -134,13 +134,21 @@ QString DatabaseObject::getDelete(const QString &whereClause) const
 
 DBObjectList DatabaseObject::getAll(const QString &whereClause) const
 {
+    const char *classname = metaObject()->className();
+    LOG(INFO) << "Reading ALL " << classname << " from DB";
+
     DBObjectList result;
     QString selectSql = getSelect(whereClause);
     QSqlQuery query(selectSql);
+
+    logQueryState(query);
+
     while (query.next()){
         DBObjectPointer obj = parseQueryResult(query);
         result.append(obj);
     }
+
+    LOG(INFO) << "Total "<<classname<<" records: " << result.size();
     return result;
 }
 
@@ -149,8 +157,14 @@ DBObjectPointer DatabaseObject::getById(QVariant idValue, QString idFieldName) c
     /*    int ind = findPropertyCaseInsensitive("id");
     if (ind==-1)
         return DBObjectPointer();*/
+    const char *classname = metaObject()->className();
+    LOG(INFO) << "Reading " << classname << " with id = " << idValue;
+
     QString selectSql = getSelect(QString("%1 = %2").arg(idFieldName).arg(DatabaseHelper::getFieldValue(idValue)));
     QSqlQuery query(selectSql);
+
+    logQueryState(query);
+
     if (query.next()){
         return parseQueryResult(query); // return retrieved data
     }
@@ -161,12 +175,15 @@ int DatabaseObject::addObject()
 {
     QString insertSql = getInsert();
     QString getIdSql = DatabaseHelper::getLastIdSql();
-
+    const char *classname = metaObject()->className();
+    LOG(INFO) << "Inserting new " << classname << " into database";
     QSqlQuery query;
+    LOG(TRACE) << "Executing sql: " << insertSql;
     if (!query.exec(insertSql)){
-        qDebug () << query.lastError().text();
+        LOG(ERROR) << "Insert of new "<< classname <<" failed. Error text: " << query.lastError().text();
         return -1;
     }
+    LOG(TRACE) << "Executing sql: " << getIdSql;
     query.clear();
     query.exec(getIdSql);
     if(query.next()){
@@ -174,6 +191,7 @@ int DatabaseObject::addObject()
         int ind = findPropertyCaseInsensitive("id");
         QMetaProperty idProperty = metaObject()->property(ind);
         idProperty.write(this, id);
+        LOG(INFO) << "Successfully added new " << classname << ", id is: " << id;
         return id;
     } else {
         return -1;
@@ -182,15 +200,21 @@ int DatabaseObject::addObject()
 
 bool DatabaseObject::modifyObject()
 {
+    const char *classname = metaObject()->className();
+    LOG(INFO) << "Editing " << classname;
     QString updateSql = getUpdate();
     QSqlQuery query(updateSql);
+    logQueryState(query);
     return query.isActive();
 }
 
 bool DatabaseObject::deleteObject()
 {
+    const char *classname = metaObject()->className();
+    LOG(INFO) << "Deleting "<<classname;
     QString deleteSql = getDelete();
     QSqlQuery query(deleteSql);
+    logQueryState(query);
     return query.isActive();
 }
 
@@ -310,6 +334,13 @@ DBObjectPointer DatabaseObject::parseQueryResult(QSqlQuery query) const
         property.write(result.data(), value);
     }
     return result;
+}
+
+void DatabaseObject::logQueryState(const QSqlQuery &query) const
+{
+    LOG(TRACE) << "Query state: " << (query.isActive()?"Active":"Inactive")
+               << "; Rows affected: " << query.numRowsAffected()
+               << "; SQL: " << query.lastQuery();
 }
 
 
