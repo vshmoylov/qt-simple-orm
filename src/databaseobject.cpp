@@ -146,7 +146,7 @@ DBObjectList DatabaseObject::getAll(const QString &whereClause) const
 
 DBObjectPointer DatabaseObject::getById(QVariant idValue, QString idFieldName) const
 {
-/*    int ind = findPropertyCaseInsensitive("id");
+    /*    int ind = findPropertyCaseInsensitive("id");
     if (ind==-1)
         return DBObjectPointer();*/
     QString selectSql = getSelect(QString("%1 = %2").arg(idFieldName).arg(DatabaseHelper::getFieldValue(idValue)));
@@ -155,6 +155,61 @@ DBObjectPointer DatabaseObject::getById(QVariant idValue, QString idFieldName) c
         return parseQueryResult(query); // return retrieved data
     }
     return DBObjectPointer(); // empty ptr
+}
+
+int DatabaseObject::addObject()
+{
+    QString insertSql = getInsert();
+    QString getIdSql = DatabaseHelper::getLastIdSql();
+
+    QSqlQuery query;
+    if (!query.exec(insertSql)){
+        qDebug () << query.lastError().text();
+        return -1;
+    }
+    query.clear();
+    query.exec(getIdSql);
+    if(query.next()){
+        int id = query.value(0).toInt();
+        int ind = findPropertyCaseInsensitive("id");
+        QMetaProperty idProperty = metaObject()->property(ind);
+        idProperty.write(this, id);
+        return id;
+    } else {
+        return -1;
+    }
+}
+
+bool DatabaseObject::modifyObject()
+{
+    QString updateSql = getUpdate();
+    QSqlQuery query(updateSql);
+    return query.isActive();
+}
+
+bool DatabaseObject::deleteObject()
+{
+    QString deleteSql = getDelete();
+    QSqlQuery query(deleteSql);
+    return query.isActive();
+}
+
+DBObjectPointer DatabaseObject::getById(const QMetaObject &meta, QVariant idValue, QString idFieldName)
+{
+    DBObjectPointer obj = newInstance(meta);
+    return obj->getById(idValue, idFieldName);
+}
+
+DBObjectPointer DatabaseObject::newInstance(const QMetaObject &meta)
+{
+    QObject *newInst = meta.newInstance();
+    return DBObjectPointer(qobject_cast<DatabaseObject*>(newInst));;
+}
+
+DBObjectList DatabaseObject::getAll(const QMetaObject &meta, const QString &whereClause)
+{
+    DBObjectPointer obj = newInstance(meta);
+    return obj->getAll(whereClause);
 }
 
 QList<FieldInfo> DatabaseObject::getFields() const
@@ -275,3 +330,9 @@ QDebug operator<<(QDebug d, const DBObjectPointer &object)
 {
     return operator <<(d, *object);
 }
+
+
+/*template<class T> QList<QSharedPointer<T> > DatabaseObject::getAll1()
+{
+    return castList<T>(DatabaseObject::getAll(T::staticMetaObject));
+}*/

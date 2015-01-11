@@ -18,6 +18,7 @@ class Client : public DatabaseObject
     FIELD(QString, description)
     FIELD(int, doctor_id)
     FIELD(QString, policy)
+    FIELD(bool, deleted)
 
     PRIMARY_KEY(id)
 

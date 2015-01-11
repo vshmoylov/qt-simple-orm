@@ -34,9 +34,31 @@ int main(int argc, char *argv[])
      db.setDatabaseName(dbFileName);
      db.open();
      Client cli;
-     DBObjectList clients = cli.getAll();
+
+     DBObjectList clients = DatabaseObject::getAll(Client::staticMetaObject);
+//     QList<QSharedPointer<Client> > clients2 = DatabaseObject::getAll1<Client>();
      qDebug() << clients;
      qDebug() << cli.getNotNull();
      qDebug() << cli.getTableDDL();
-    return 0;
+
+     Client b;
+     b.set_name("bbbbb");
+     b.set_surname("bbbbbb");
+     b.set_birthdate(QDate(1992, 03, 27));
+     b.addObject();
+
+     clients = cli.getAll();
+     qDebug() << clients;
+
+     b.set_name("bbb123");
+     b.modifyObject();
+
+     clients = cli.getAll();
+     qDebug() << clients;
+
+     b.deleteObject();
+
+     clients = cli.getAll();
+     qDebug() << clients;
+     return 0;
 }

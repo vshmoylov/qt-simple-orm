@@ -10,6 +10,7 @@ public:
     static QString getTypeString(QVariant::Type type, const QString &databaseDriverName);
     static QString getFieldValue(const QVariant &value);
     static QString getFieldValue(const QVariant &value, const QString &databaseDriverName);
+    static QString getLastIdSql();
 };
 
 #endif // DATABASEHELPER_H

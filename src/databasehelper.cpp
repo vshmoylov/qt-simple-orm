@@ -11,6 +11,7 @@ QString DatabaseHelper::getTypeString(QVariant::Type type, const QString &databa
         case QVariant::LongLong:
         case QVariant::UInt:
         case QVariant::ULongLong:
+        case QVariant::Bool:
             result = "INTEGER";
             break;
         case QVariant::String:
@@ -52,4 +53,10 @@ QString DatabaseHelper::getFieldValue(const QVariant &value, const QString &data
     default:
         return QString("'%1'").arg(value.toString());
     }
+}
+
+QString DatabaseHelper::getLastIdSql()
+{
+    QString sqlDriverName = QSqlDatabase::database().driverName().toUpper();
+    return "select last_insert_rowid();";
 }

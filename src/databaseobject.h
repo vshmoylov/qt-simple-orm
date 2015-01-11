@@ -5,10 +5,10 @@
 #include <QtSql>
 
 #define FIELD(TYPE, NAME) \
-    Q_PROPERTY(TYPE NAME READ get##NAME WRITE set##NAME) \
+    Q_PROPERTY(TYPE NAME READ get_##NAME WRITE set_##NAME) \
     public: \
-    TYPE get##NAME () const { return m_##NAME; } \
-    void set##NAME (const TYPE &value) { m_##NAME = value; } \
+    TYPE get_##NAME () const { return m_##NAME; } \
+    void set_##NAME (const TYPE &value) { m_##NAME = value; } \
     private: \
     TYPE m_##NAME = TYPE();
 
@@ -26,6 +26,16 @@ typedef struct { int propertyIndex; QString fieldName; QVariant::Type type; } Fi
 class DatabaseObject;
 typedef QSharedPointer<DatabaseObject> DBObjectPointer;
 typedef QList<DBObjectPointer> DBObjectList;
+//QStringList a;
+
+template<typename T>QList< QSharedPointer<T> > castList(const DBObjectList &objList)
+{
+     QList< QSharedPointer<T> > result;
+     foreach (const DBObjectPointer &ptr, objList) {
+         result.append(ptr.objectCast<T>());
+     }
+     return result;
+}
 
 class DatabaseObject : public QObject
 {
@@ -39,9 +49,15 @@ public:
     //ORM-related functions
     DBObjectList getAll(const QString &whereClause = QString()) const;
     DBObjectPointer getById(QVariant idValue, QString idFieldName = QString("id")) const;
-    //int add/persist()
-    //bool modify/save()
-    //bool delete()
+    int addObject();     //int add/persist()
+    bool modifyObject(); //bool modify/save()
+    bool deleteObject(); //bool delete()
+
+    static DBObjectList getAll(const QMetaObject &meta, const QString &whereClause = QString());
+//    template<class T> static QList< QSharedPointer<T> > getAll1();
+    static DBObjectPointer getById(const QMetaObject &meta, QVariant idValue, QString idFieldName = QString("id"));
+    static DBObjectPointer newInstance(const QMetaObject &meta);
+
 
     //Metadata-related functions
     QList<FieldInfo> getFields() const;
