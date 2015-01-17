@@ -11,8 +11,9 @@
 #endif
 
 //orm-related macros
-#define FIELD(TYPE, NAME) \
+#define FIELD(TYPE, NAME, DBTYPE...) \
     Q_PROPERTY(TYPE NAME READ get_##NAME WRITE set_##NAME) \
+    Q_CLASSINFO(#NAME, #DBTYPE) \
     public: \
     TYPE get_##NAME () const { return m_##NAME; } \
     void set_##NAME (const TYPE &value) { m_##NAME = value; } \
@@ -83,6 +84,7 @@ public:
 
     //SQL-related functions
     QString getTableDDL() const;
+    QString getDatabaseType(const QString &fieldName) const;
     QString getSelect(const QString &whereClause = QString()) const;
     QString getInsert() const;
     QString getUpdate(const QString &whereClause = QString()) const;

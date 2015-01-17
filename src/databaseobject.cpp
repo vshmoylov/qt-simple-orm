@@ -17,7 +17,7 @@ QString DatabaseObject::getTableDDL() const
     if (sqlDriverName == "QSQLITE"){
         tableDDL = "CREATE TABLE IF NOT EXISTS " + tableName + " ( ";
         foreach (const FieldInfo &field, fields) {
-            QString type = DatabaseHelper::getTypeString(field.type, sqlDriverName).toUpper();
+            QString type = getDatabaseType(field.fieldName).isEmpty()?DatabaseHelper::getTypeString(field.type, sqlDriverName).toUpper():getDatabaseType(field.fieldName);
             QString name = field.fieldName;
             bool isNull = isNullField(name);
             QString constraints = "";
@@ -33,6 +33,15 @@ QString DatabaseObject::getTableDDL() const
         tableDDL +=");";
     }
     return tableDDL;
+}
+
+QString DatabaseObject::getDatabaseType(const QString &fieldName) const
+{
+    int idx = metaObject()->indexOfClassInfo(fieldName.toLocal8Bit());
+    if (idx<0)
+        return QString();
+    QMetaClassInfo metaInfo = metaObject()->classInfo(idx);
+    return metaInfo.value();
 }
 
 QString DatabaseObject::getSelect(const QString &whereClause) const
