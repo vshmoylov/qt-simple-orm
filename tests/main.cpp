@@ -34,6 +34,12 @@ int main(int argc, char *argv[])
      db.setDatabaseName(dbFileName);
      db.open();
      Client cli;
+     cli.set_id(1);
+     cli.set_name("name1");
+     Client Cli2 = cli;
+
+     Cli2.set_surname("surname");
+     cli=Cli2;
 
      DBObjectList clients = DatabaseObject::getAll(Client::staticMetaObject);
 //     QList<QSharedPointer<Client> > clients2 = DatabaseObject::getAll1<Client>();

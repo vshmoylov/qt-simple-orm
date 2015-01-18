@@ -12,10 +12,10 @@
 
 //orm-related macros
 #define FIELD(TYPE, NAME, DBTYPE...) \
-    Q_PROPERTY(TYPE NAME READ get_##NAME WRITE set_##NAME) \
+    Q_PROPERTY(TYPE NAME READ NAME WRITE set_##NAME) \
     Q_CLASSINFO(#NAME, #DBTYPE) \
     public: \
-    TYPE get_##NAME () const { return m_##NAME; } \
+    TYPE NAME () const { return m_##NAME; } \
     void set_##NAME (const TYPE &value) { m_##NAME = value; } \
     private: \
     TYPE m_##NAME = TYPE();
@@ -60,12 +60,14 @@ class DatabaseObject : public QObject
     Q_OBJECT
 public:
     Q_INVOKABLE explicit DatabaseObject(QObject *parent = 0);
+    DatabaseObject(const DatabaseObject &other);
+    DatabaseObject& operator =(const DatabaseObject &other);
 
     void clear();
 
     //ORM-related functions
-    DBObjectList getAll(const QString &whereClause = QString()) const;
-    DBObjectPointer getById(QVariant idValue, QString idFieldName = QString("id")) const;
+    virtual DBObjectList getAll(const QString &whereClause = QString()) const;
+    virtual DBObjectPointer getById(QVariant idValue, QString idFieldName = QString("id")) const;
     virtual int addObject();     //int add/persist()
     virtual bool modifyObject(); //bool modify/save()
     virtual bool deleteObject(); //bool delete()

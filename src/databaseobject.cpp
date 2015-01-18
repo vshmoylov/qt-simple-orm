@@ -6,6 +6,27 @@ DatabaseObject::DatabaseObject(QObject *parent) :
 {
 }
 
+DatabaseObject::DatabaseObject(const DatabaseObject &other):QObject(other.parent())
+{
+    //    copyDataFromOther(other);
+}
+
+DatabaseObject &DatabaseObject::operator =(const DatabaseObject &other)
+{
+    const QMetaObject *metaObj = metaObject();
+    LOG() << metaObj->className();
+    if (metaObj != other.metaObject()){
+        LOG(ERROR) << "Trying to assign " << other.metaObject()->className() << " to " << metaObj->className() << "Nothing will be copied.";
+        return *this;
+    }
+    QList<FieldInfo> fields = getFields();
+    foreach (const FieldInfo &field, fields) {
+        QMetaProperty property = metaObj->property(field.propertyIndex);
+        property.write(this, property.read(&other));
+    }
+    return *this;
+}
+
 QString DatabaseObject::getTableDDL() const
 {
     QString tableDDL;
